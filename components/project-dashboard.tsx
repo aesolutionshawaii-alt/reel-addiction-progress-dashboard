@@ -1,5 +1,5 @@
 "use client"
-import SendAlertsButton from "./SendAlertsButton";
+import SendAlertsButton from "./SendAlertsButton"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -44,10 +44,10 @@ export default function ProjectDashboard() {
     done: tasks.filter((t) => t.status === "Done").length,
   }
 
-   const data = [
+  const data = [
     { name: "Done", value: overall.done },
     { name: "Remaining", value: overall.total - overall.done }
-  ];
+  ]
 
   return (
     <div className="p-6 grid gap-6 md:grid-cols-2">
@@ -114,50 +114,6 @@ export default function ProjectDashboard() {
                     )}
                   </li>
                 ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
-  )
-}
-
-
-{/* Section Progress */}
-{sections.map((section) => {
-
-      </Card>
-
-      {/* Section Progress */}
-      {sections.map((section) => {
-        const sectionTasks = tasks.filter((t) => t.phase === section)
-        const done = sectionTasks.filter((t) => t.status === "Done").length
-        const percent = Math.round((done / sectionTasks.length) * 100) || 0
-
-        return (
-          <Card key={section}>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-2">{section}</h3>
-              <Progress value={percent} className="h-2 mb-4" />
-              <ul className="space-y-3">
-                {sectionTasks.map((t, i) => {
-                  return (
-                    <li key={i}>
-                      <div className="flex justify-between items-center">
-                        <span>{t.task}</span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            statusColors[t.status] || "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {t.status}
-                        </span>
-                      </div>
-                      {t.notes && <p className="text-xs text-gray-500 mt-1">{t.notes}</p>}
-                    </li>
-                  )
-                })}
               </ul>
             </CardContent>
           </Card>
