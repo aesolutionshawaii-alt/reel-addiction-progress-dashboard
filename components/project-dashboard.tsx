@@ -1,4 +1,5 @@
 "use client"
+import SendAlertsButton from "./SendAlertsButton";
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -70,6 +71,17 @@ export default function ProjectDashboard() {
             </ResponsiveContainer>
           </div>
         </CardContent>
+        </Card>
+
+{/* Team Notifications */}
+<div className="rounded-xl border bg-white p-6 shadow">
+  <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
+  <SendAlertsButton />
+</div>
+
+{/* Section Progress */}
+{sections.map((section) => {
+
       </Card>
 
       {/* Section Progress */}
