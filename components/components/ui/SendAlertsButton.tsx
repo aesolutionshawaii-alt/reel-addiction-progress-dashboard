@@ -1,74 +1,42 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 
 export default function SendAlertsButton() {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
 
-  const sendAlert = async () => {
-    setLoading(true);
-    setMessage("");
-
+  async function handleClick() {
+    setStatus("sending")
     try {
-      const res = await fetch("/api/send-alerts", {
-        method: "POST",
-      });
-
+      const res = await fetch("/api/send-alerts", { method: "POST" })
       if (res.ok) {
-        setMessage("✅ Alert sent!");
+        setStatus("sent")
       } else {
-        setMessage("❌ Failed to send alert.");
+        setStatus("error")
       }
     } catch (err) {
-      setMessage("⚠️ Error sending alert.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <button
-        onClick={sendAlert}
-        disabled={loading}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? "Sending..." : "Send Alert"}
-      </button>
-      {message && <p className="text-sm text-gray-600">{message}</p>}
-    </div>
-  );
-}
-"use client";
-import { useState } from "react";
-
-export default function SendAlertsButton() {
-  const [status, setStatus] = useState("");
-
-  async function handleSend() {
-    setStatus("Sending alerts...");
-
-    const res = await fetch("/api/send-alerts", {
-      method: "POST",
-    });
-
-    if (res.ok) {
-      setStatus("✅ Alerts sent!");
-    } else {
-      setStatus("❌ Failed to send alerts");
+      console.error(err)
+      setStatus("error")
     }
   }
 
   return (
-    <div className="p-4">
+    <div>
       <button
-        onClick={handleSend}
-        className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+        onClick={handleClick}
+        disabled={status === "sending"}
+        className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        Send Alerts
+        {status === "sending" ? "Sending..." : "Send Alert"}
       </button>
-      {status && <p className="mt-2">{status}</p>}
+
+      {status === "sent" && (
+        <p className="mt-2 text-sm text-green-600">✅ Alert sent!</p>
+      )}
+      {status === "error" && (
+        <p className="mt-2 text-sm text-red-600">❌ Failed to send alert.</p>
+      )}
     </div>
-  );
+  )
 }
+
