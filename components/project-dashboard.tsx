@@ -47,7 +47,7 @@ export default function ProjectDashboard() {
   const data = [
     { name: "Done", value: overall.done },
     { name: "Remaining", value: overall.total - overall.done },
-  ]
+  
 
   return (
     <div className="p-6 grid gap-6 md:grid-cols-2">
