@@ -35,7 +35,11 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({
+    // 👇 Trigger Resend notification
+await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-alerts`, {
+  method: "POST",
+});
+return NextResponse.json({
       ok: true,
       message: `Subscribed ${email}`,
     });
