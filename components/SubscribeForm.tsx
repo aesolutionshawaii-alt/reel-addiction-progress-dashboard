@@ -32,8 +32,8 @@ export default function SubscribeForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-sm">
       <p className="text-sm text-gray-700">
-        Subscribe to fishing updates and trip changes. We’ll notify you when
-        there’s something new.
+         Subscribe with your email to get notified when this website overhaul checklist changes. 
+  For internal use only.
       </p>
       <input
         type="email"
