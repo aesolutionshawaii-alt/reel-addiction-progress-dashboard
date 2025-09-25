@@ -1,5 +1,6 @@
 "use client"
 import SendAlertsButton from "./SendAlertsButton"
+import SubscribeForm from "../components/SubscribeForm"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -79,10 +80,16 @@ export default function ProjectDashboard() {
         </CardContent>
       </Card>
 
-      {/* Team Notifications */}
-      <div className="rounded-xl border bg-white p-6 shadow">
-        <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
-        <SendAlertsButton />
+      {/* Team Notifications + Subscribe */}
+      <div className="rounded-xl border bg-white p-6 shadow space-y-6">
+        <div>
+          <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
+          <SendAlertsButton />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold mb-2">Subscribe for Updates</h2>
+          <SubscribeForm />
+        </div>
       </div>
 
       {/* Section Progress */}
