@@ -22,10 +22,10 @@ export async function POST(req: Request) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Append email + timestamp
+    // Append to "Subscribers" tab
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Sheet1!A:B", // emails in col A, timestamps in col B
+      range: "Subscribers!A:B", // A = email, B = timestamp
       valueInputOption: "RAW",
       requestBody: {
         values: [[email, new Date().toISOString()]],
