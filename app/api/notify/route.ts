@@ -12,24 +12,41 @@ export async function GET() {
     );
     const sheets = google.sheets({ version: "v4", auth });
 
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+
     // 1. Get subscribers
     const subsRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      spreadsheetId,
       range: "Subscribers!A:A",
     });
     const subscribers = subsRes.data.values?.flat().filter(Boolean) || [];
+    if (subscribers.length === 0) {
+      return NextResponse.json({ ok: true, message: "No subscribers yet." });
+    }
 
-    // 2. Get checklist data
+    // 2. Get checklist
     const checklistRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Checklist!A:Z", // adjust tab name/range
+      spreadsheetId,
+      range: "Checklist!A:Z", // adjust tab name
     });
     const checklist = checklistRes.data.values || [];
 
-    // TODO: Compare checklist to previous version
-    // For now, we’ll just notify every time this endpoint runs
+    // 3. Get last snapshot
+    const snapshotRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "LastSnapshot!A:Z",
+    });
+    const snapshot = snapshotRes.data.values || [];
 
-    // 3. Send email via Resend
+    // 4. Compare (simple string compare)
+    const currentStr = JSON.stringify(checklist);
+    const lastStr = JSON.stringify(snapshot);
+
+    if (currentStr === lastStr) {
+      return NextResponse.json({ ok: true, message: "No changes." });
+    }
+
+    // 5. Send emails via Resend
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -40,18 +57,35 @@ export async function GET() {
         from: "Reel Addiction III <updates@yourdomain.com>",
         to: subscribers,
         subject: "Checklist Updated",
-        html: `<p>The Reel Addiction III trip checklist has been updated.</p>`,
+        html: `<p>The Reel Addiction III trip checklist has been updated.</p>
+               <pre>${JSON.stringify(checklist, null, 2)}</pre>`,
       }),
     });
 
     if (!sendRes.ok) throw new Error("Failed to send emails");
 
+    // 6. Update snapshot tab
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: "LastSnapshot!A:Z",
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "LastSnapshot!A1",
+      valueInputOption: "RAW",
+      requestBody: { values: checklist },
+    });
+
     return NextResponse.json({
       ok: true,
-      message: `Notified ${subscribers.length} subscribers`,
+      message: `Changes found — notified ${subscribers.length} subscribers.`,
     });
   } catch (err: any) {
     console.error("Notify error:", err);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
+
