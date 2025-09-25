@@ -1,5 +1,7 @@
 import { google } from "googleapis"
 import { NextResponse } from "next/server"
+export const revalidate = 0; // Always fetch fresh data
+
 
 export async function GET() {
   try {
