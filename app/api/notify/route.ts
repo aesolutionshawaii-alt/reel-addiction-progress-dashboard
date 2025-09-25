@@ -25,11 +25,14 @@ function makeDiff(oldData: string[][], newData: string[][]): string {
 
 export async function GET() {
   try {
-    // ✅ Same auth style as /api/progress
+    // ✅ Match Vercel env variable names
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
+          /\\n/g,
+          "\n"
+        ),
       },
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
@@ -115,4 +118,5 @@ export async function GET() {
     );
   }
 }
+
 
