@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const sheets = google.sheets({ version: "v4", auth });
 
     // ✅ Append subscriber to Google Sheet
-    await sheets.spreadsheets.values.append({
+    const appendResponse = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID!,
       range: "Subscribers!A:B",
       valueInputOption: "RAW",
@@ -35,6 +35,8 @@ export async function POST(req: Request) {
         values: [[email, new Date().toISOString()]],
       },
     });
+
+    console.log("Google Sheets append response:", appendResponse.status);
 
     // ✅ Trigger Resend notification via your send-alerts route
     if (process.env.VERCEL_URL) {
