@@ -37,9 +37,13 @@ export async function POST(req: Request) {
     });
 
     // ✅ Trigger Resend notification via your send-alerts route
-    await fetch("/api/send-alerts", {
-      method: "POST",
-    });
+    if (process.env.VERCEL_URL) {
+      await fetch(`https://${process.env.VERCEL_URL}/api/send-alerts`, {
+        method: "POST",
+      });
+    } else {
+      console.warn("⚠️ VERCEL_URL not defined — skipping Resend notification");
+    }
 
     return NextResponse.json({
       ok: true,
