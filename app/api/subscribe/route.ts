@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Match Vercel env variable names
+    // ✅ Google Sheets auth
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -25,10 +25,10 @@ export async function POST(req: Request) {
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    await fetch("/api/send-alerts", {
-      method: "POST",
-    });
 
+    // ✅ Append subscriber to Google Sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID!,
       range: "Subscribers!A:B",
       valueInputOption: "RAW",
       requestBody: {
@@ -36,11 +36,12 @@ export async function POST(req: Request) {
       },
     });
 
-    // 👇 Trigger Resend notification
-await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-alerts`, {
-  method: "POST",
-});
-return NextResponse.json({
+    // ✅ Trigger Resend notification via your send-alerts route
+    await fetch("/api/send-alerts", {
+      method: "POST",
+    });
+
+    return NextResponse.json({
       ok: true,
       message: `Subscribed ${email}`,
     });
