@@ -1,5 +1,4 @@
 "use client"
-import SendAlertsButton from "./SendAlertsButton"
 import SubscribeForm from "../components/SubscribeForm"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -47,7 +46,7 @@ export default function ProjectDashboard() {
 
   const data = [
     { name: "Done", value: overall.done },
-    { name: "Remaining", value: overall.total - overall.done }
+    { name: "Remaining", value: overall.total - overall.done },
   ]
 
   return (
@@ -80,16 +79,10 @@ export default function ProjectDashboard() {
         </CardContent>
       </Card>
 
-      {/* Team Notifications + Subscribe */}
-      <div className="rounded-xl border bg-white p-6 shadow space-y-6">
-        <div>
-          <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
-          <SendAlertsButton />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold mb-2">Subscribe for Updates</h2>
-          <SubscribeForm />
-        </div>
+      {/* Team Notifications */}
+      <div className="rounded-xl border bg-white p-6 shadow">
+        <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
+        <SubscribeForm />
       </div>
 
       {/* Section Progress */}
