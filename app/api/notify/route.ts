@@ -11,7 +11,9 @@ function makeDiff(oldData: string[][], newData: string[][]): string {
 
     if (JSON.stringify(oldRow) !== JSON.stringify(newRow)) {
       diffs.push(
-        `Row ${i + 1}:<br>Before → ${oldRow.join(" | ") || "(empty)"}<br>After → ${newRow.join(" | ") || "(empty)"}<br><br>`
+        `Row ${i + 1}:<br>Before → ${oldRow.join(" | ") || "(empty)"}<br>After → ${
+          newRow.join(" | ") || "(empty)"
+        }<br><br>`
       );
     }
   }
@@ -31,6 +33,7 @@ export async function GET() {
       ["https://www.googleapis.com/auth/spreadsheets"]
     );
     const sheets = google.sheets({ version: "v4", auth });
+
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
 
     // 1. Get subscribers
@@ -46,6 +49,69 @@ export async function GET() {
     // 2. Get checklist
     const checklistRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Checklist!A:Z", // adjust name if needed
+      range: "Checklist!A:Z", // adjust tab name if needed
     });
     const checklist = checklistRes.data.values || [];
+
+    // 3. Get last snapshot
+    const snapshotRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "LastSnapshot!A:Z",
+    });
+    const snapshot = snapshotRes.data.values || [];
+
+    // 4. Compare
+    const currentStr = JSON.stringify(checklist);
+    const lastStr = JSON.stringify(snapshot);
+
+    if (currentStr === lastStr) {
+      return NextResponse.json({ ok: true, message: "No changes." });
+    }
+
+    // Build diff
+    const diffHtml = makeDiff(snapshot, checklist);
+
+    // 5. Send emails via Resend
+    const sendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY || ""}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Reel Addiction III <updates@yourdomain.com>",
+        to: subscribers,
+        subject: "Checklist Updated",
+        html: `<p>The Reel Addiction III trip checklist has been updated.</p><hr><p>${diffHtml}</p>`,
+      }),
+    });
+
+    if (!sendRes.ok) {
+      throw new Error("Failed to send emails");
+    }
+
+    // 6. Update snapshot
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: "LastSnapshot!A:Z",
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "LastSnapshot!A1",
+      valueInputOption: "RAW",
+      requestBody: { values: checklist },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      message: `Changes found — notified ${subscribers.length} subscribers.`,
+    });
+  } catch (err: any) {
+    console.error("Notify error:", err);
+    return NextResponse.json(
+      { ok: false, error: err.message },
+      { status: 500 }
+    );
+  }
+}
+
