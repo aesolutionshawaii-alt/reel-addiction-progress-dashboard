@@ -5,7 +5,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST() {
   try {
-    await resend.emails.send({
+        console.log("About to send:", {
+      from: "onboarding@resend.dev",
+      to: "aesolutionshawaii@gmail.com",
+    });
+await resend.emails.send({
       from: "onboarding@resend.dev", // or your verified sender in Resend
       to: "aesolutionshawaii@gmail.com",
       subject: "Website Project Checklist Updated",
