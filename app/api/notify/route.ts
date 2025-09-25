@@ -1,122 +1,38 @@
-import { google } from "googleapis";
-import { NextResponse } from "next/server";
-
-function makeDiff(oldData: string[][], newData: string[][]): string {
-  const diffs: string[] = [];
-  const maxRows = Math.max(oldData.length, newData.length);
-
-  for (let i = 0; i < maxRows; i++) {
-    const oldRow = oldData[i] || [];
-    const newRow = newData[i] || [];
-
-    if (JSON.stringify(oldRow) !== JSON.stringify(newRow)) {
-      diffs.push(
-        `Row ${i + 1}:<br>Before → ${oldRow.join(" | ") || "(empty)"}<br>After → ${
-          newRow.join(" | ") || "(empty)"
-        }<br><br>`
-      );
-    }
-  }
-
-  return diffs.length > 0
-    ? diffs.join("\n")
-    : "Checklist updated, but no row-level differences detected.";
-}
+import { google } from "googleapis"
+import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-    // ✅ Match Vercel env variable names
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
-          /\\n/g,
-          "\n"
-        ),
-      },
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
+    // Load environment variables
+    const spreadsheetId = process.env.GOOGLE_SHEETS_ID
+    const range = process.env.GOOGLE_SHEETS_RANGE
+    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n")
 
-    const sheets = google.sheets({ version: "v4", auth });
-    const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
-
-    // 1. Subscribers
-    const subsRes = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "Subscribers!A:A",
-    });
-    const subscribers = subsRes.data.values?.flat().filter(Boolean) || [];
-    if (subscribers.length === 0) {
-      return NextResponse.json({ ok: true, message: "No subscribers yet." });
+    if (!spreadsheetId || !range || !clientEmail || !privateKey) {
+      throw new Error("Missing required Google Sheets environment variables")
     }
 
-    // 2. Checklist
-    const checklistRes = await sheets.spreadsheets.values.get({
+    // Auth with Google
+    const auth = new google.auth.JWT({
+      email: clientEmail,
+      key: privateKey,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    })
+
+    const sheets = google.sheets({ version: "v4", auth })
+
+    // Fetch the data
+    const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Checklist!A:Z",
-    });
-    const checklist = checklistRes.data.values || [];
+      range, // <-- now uses GOOGLE_SHEETS_RANGE
+    })
 
-    // 3. Last snapshot
-    const snapshotRes = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "LastSnapshot!A:Z",
-    });
-    const snapshot = snapshotRes.data.values || [];
+    const rows = res.data.values || []
 
-    // 4. Compare
-    const currentStr = JSON.stringify(checklist);
-    const lastStr = JSON.stringify(snapshot);
-
-    if (currentStr === lastStr) {
-      return NextResponse.json({ ok: true, message: "No changes." });
-    }
-
-    const diffHtml = makeDiff(snapshot, checklist);
-
-    // 5. Send emails (Resend)
-    const sendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY || ""}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Reel Addiction III <updates@yourdomain.com>",
-        to: subscribers,
-        subject: "Checklist Updated",
-        html: `<p>The Reel Addiction III project checklist has been updated.</p><hr><p>${diffHtml}</p>`,
-      }),
-    });
-
-    if (!sendRes.ok) {
-      console.error("Resend error:", await sendRes.text());
-      throw new Error("Failed to send emails");
-    }
-
-    // 6. Update snapshot
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId,
-      range: "LastSnapshot!A:Z",
-    });
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: "LastSnapshot!A1",
-      valueInputOption: "RAW",
-      requestBody: { values: checklist },
-    });
-
-    return NextResponse.json({
-      ok: true,
-      message: `Changes found — notified ${subscribers.length} subscribers.`,
-    });
-  } catch (err: any) {
-    console.error("Notify error:", err);
-    return NextResponse.json(
-      { ok: false, error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ rows })
+  } catch (error) {
+    console.error("Notify error:", error)
+    return NextResponse.json({ error: "Failed to fetch sheet data" }, { status: 500 })
   }
 }
-
-
