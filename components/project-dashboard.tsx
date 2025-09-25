@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import type { TaskRow } from "@/lib/googleSheets"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const statusColors = {
   Done: "bg-green-100 text-green-800",
@@ -14,23 +14,39 @@ const statusColors = {
   blocked: "bg-red-100 text-red-800",
 }
 
+const POLL_MS = 30_000
+
 export default function ProjectDashboard() {
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const isFetching = useRef(false)
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await fetch("/api/progress")
-        const rows = await data.json()
-        setTasks(rows)
-      } catch (error) {
-        console.error("Failed to load progress data:", error)
-      } finally {
-        setLoading(false)
-      }
+  async function loadData() {
+    if (isFetching.current) return
+    isFetching.current = true
+    try {
+      const res = await fetch(`/api/progress?t=${Date.now()}`, { cache: "no-store" })
+      const rows = await res.json()
+      setTasks(rows)
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error("Failed to load progress data:", error)
+    } finally {
+      isFetching.current = false
+      setLoading(false)
     }
+  }
+
+  // initial load
+  useEffect(() => {
     loadData()
+  }, [])
+
+  // poll every 30s
+  useEffect(() => {
+    const id = setInterval(loadData, POLL_MS)
+    return () => clearInterval(id)
   }, [])
 
   if (loading) {
@@ -38,12 +54,10 @@ export default function ProjectDashboard() {
   }
 
   const sections = [...new Set(tasks.map((t) => t.phase))]
-
   const overall = {
     total: tasks.length,
     done: tasks.filter((t) => t.status === "Done").length,
   }
-
   const data = [
     { name: "Done", value: overall.done },
     { name: "Remaining", value: overall.total - overall.done },
@@ -59,6 +73,11 @@ export default function ProjectDashboard() {
             <p className="text-sm text-gray-600">
               {overall.done} of {overall.total} tasks complete
             </p>
+            {lastUpdated && (
+              <p className="text-xs text-gray-400 mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
           <div className="w-32 h-32">
             <ResponsiveContainer>
