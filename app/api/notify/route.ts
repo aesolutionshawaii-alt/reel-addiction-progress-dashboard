@@ -25,18 +25,19 @@ function makeDiff(oldData: string[][], newData: string[][]): string {
 
 export async function GET() {
   try {
-    // Google Sheets auth
-    const auth = new google.auth.JWT(
-      process.env.GOOGLE_CLIENT_EMAIL,
-      undefined,
-      process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      ["https://www.googleapis.com/auth/spreadsheets"]
-    );
-    const sheets = google.sheets({ version: "v4", auth });
+    // ✅ Same auth style as /api/progress
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
 
+    const sheets = google.sheets({ version: "v4", auth });
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
 
-    // 1. Get subscribers
+    // 1. Subscribers
     const subsRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: "Subscribers!A:A",
@@ -46,14 +47,14 @@ export async function GET() {
       return NextResponse.json({ ok: true, message: "No subscribers yet." });
     }
 
-    // 2. Get checklist
+    // 2. Checklist
     const checklistRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: "Checklist!A:Z", // adjust tab name if needed
+      range: "Checklist!A:Z",
     });
     const checklist = checklistRes.data.values || [];
 
-    // 3. Get last snapshot
+    // 3. Last snapshot
     const snapshotRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: "LastSnapshot!A:Z",
@@ -68,10 +69,9 @@ export async function GET() {
       return NextResponse.json({ ok: true, message: "No changes." });
     }
 
-    // Build diff
     const diffHtml = makeDiff(snapshot, checklist);
 
-    // 5. Send emails via Resend
+    // 5. Send emails (Resend)
     const sendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -82,11 +82,12 @@ export async function GET() {
         from: "Reel Addiction III <updates@yourdomain.com>",
         to: subscribers,
         subject: "Checklist Updated",
-        html: `<p>The Reel Addiction III trip checklist has been updated.</p><hr><p>${diffHtml}</p>`,
+        html: `<p>The Reel Addiction III project checklist has been updated.</p><hr><p>${diffHtml}</p>`,
       }),
     });
 
     if (!sendRes.ok) {
+      console.error("Resend error:", await sendRes.text());
       throw new Error("Failed to send emails");
     }
 
