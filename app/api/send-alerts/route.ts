@@ -6,10 +6,13 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST() {
   try {
     await resend.emails.send({
-      from: "alerts@yourdomain.com",     // must be a verified sender in Resend
-      to: "aesolutionshawaii@gmail.com", // your Gmail
-      subject: "Dashboard Alert",
-      text: "This is a test alert from the Reel Addiction III dashboard.",
+      from: "onboarding@resend.dev", // or your verified sender in Resend
+      to: "aesolutionshawaii@gmail.com",
+      subject: "Website Project Checklist Updated",
+      html: `
+        <p>Aloha,</p>
+        <p>The internal website overhaul checklist has changed (tab: <b>Progress</b>).</p>
+      `,
     });
 
     return NextResponse.json({ ok: true });
