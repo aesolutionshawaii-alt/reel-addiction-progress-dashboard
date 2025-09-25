@@ -31,7 +31,7 @@ export async function GET() {
       ["https://www.googleapis.com/auth/spreadsheets"]
     );
     const sheets = google.sheets({ version: "v4", auth });
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
+    const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
 
     // 1. Get subscribers
     const subsRes = await sheets.spreadsheets.values.get({
