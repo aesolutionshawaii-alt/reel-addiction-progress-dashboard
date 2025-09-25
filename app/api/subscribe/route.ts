@@ -1,5 +1,8 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
@@ -36,23 +39,27 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("Google Sheets append response:", appendResponse.status);
+    console.log("📒 Google Sheets append response:", appendResponse.status);
 
-    // ✅ Trigger Resend notification via your send-alerts route
-    if (process.env.VERCEL_URL) {
-      await fetch(`https://${process.env.VERCEL_URL}/api/send-alerts`, {
-        method: "POST",
-      });
-    } else {
-      console.warn("⚠️ VERCEL_URL not defined — skipping Resend notification");
-    }
+    // ✅ Send Resend notification directly
+    const resendResponse = await resend.emails.send({
+      from: "onboarding@resend.dev", // replace with verified domain when ready
+      to: "aesolutionshawaii@gmail.com",
+      subject: "Website Project Checklist Updated",
+      html: `
+        <p>Aloha,</p>
+        <p>The internal website overhaul checklist has changed (tab: <b>Progress</b>).</p>
+      `,
+    });
+
+    console.log("📨 Resend response:", resendResponse);
 
     return NextResponse.json({
       ok: true,
-      message: `Subscribed ${email}`,
+      message: `Subscribed ${email}, added to Google Sheets, and sent notification.`,
     });
   } catch (err: any) {
-    console.error("Subscribe error:", err);
+    console.error("❌ Subscribe error:", err);
     return NextResponse.json(
       { ok: false, error: err.message },
       { status: 500 }
@@ -66,4 +73,5 @@ export async function GET() {
     message: "Subscribe endpoint is alive ✅",
   });
 }
+
 
