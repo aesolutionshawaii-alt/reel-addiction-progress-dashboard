@@ -43,12 +43,17 @@ export async function POST(req: Request) {
 
     // ✅ Send Resend notification directly
     const resendResponse = await resend.emails.send({
-      from: "onboarding@resend.dev", // replace with verified domain when ready
+      from: "Reel Addiction III Dashboard <onboarding@resend.dev>", 
+      // later: use notifications@reeladdictioniii.com once domain is verified
       to: "aesolutionshawaii@gmail.com",
-      subject: "Website Project Checklist Updated",
+      subject: "Update from Reel Addiction III Dashboard",
       html: `
         <p>Aloha,</p>
-        <p>The internal website overhaul checklist has changed (tab: <b>Progress</b>).</p>
+        <p>The <b>Website Progress Tracker</b> was just updated.</p>
+        <p>New subscriber added: <b>${email}</b></p>
+        <p><a href="https://reel-addiction-progress-dashboard.vercel.app/progress" target="_blank">
+          Open Progress Tab
+        </a></p>
       `,
     });
 
