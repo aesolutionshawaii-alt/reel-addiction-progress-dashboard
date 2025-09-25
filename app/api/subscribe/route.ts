@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     // Append to "Subscribers" tab
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
       range: "Subscribers!A:B",
       valueInputOption: "RAW",
       requestBody: {
