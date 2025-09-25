@@ -1,38 +1,47 @@
-import { NextResponse } from "next/server";
 import { google } from "googleapis";
+import { NextResponse } from "next/server";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const email = searchParams.get("email");
-
-  if (!email) {
-    return NextResponse.json({ ok: false, error: "No email provided" });
-  }
-
+export async function POST(req: Request) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      },
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-    });
+    const { email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json(
+        { ok: false, error: "Email is required" },
+        { status: 400 }
+      );
+    }
+
+    // Google Sheets auth
+    const auth = new google.auth.JWT(
+      process.env.GOOGLE_CLIENT_EMAIL,
+      undefined,
+      process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      ["https://www.googleapis.com/auth/spreadsheets"]
+    );
 
     const sheets = google.sheets({ version: "v4", auth });
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID!;
 
+    // Append email + timestamp
     await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: "Subscribers!A:B",
-      valueInputOption: "USER_ENTERED",
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: "Sheet1!A:B", // emails in col A, timestamps in col B
+      valueInputOption: "RAW",
       requestBody: {
         values: [[email, new Date().toISOString()]],
       },
     });
 
-    return NextResponse.json({ ok: true, email });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ ok: false, error: "Failed to save" }, { status: 500 });
+    return NextResponse.json({
+      ok: true,
+      message: `Subscribed: ${email}`,
+    });
+  } catch (err: any) {
+    console.error("Subscribe error:", err);
+    return NextResponse.json(
+      { ok: false, error: "Failed to subscribe" },
+      { status: 500 }
+    );
   }
 }
+
