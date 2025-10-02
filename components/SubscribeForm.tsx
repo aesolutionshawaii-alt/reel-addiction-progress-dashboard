@@ -1,55 +1,68 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 
 export default function SubscribeForm() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("");
+  const [email, setEmail] = useState("")
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
+  const [message, setMessage] = useState("")
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus("Subscribing...");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatus("idle")
+    setMessage("")
 
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
-      });
+      })
 
-      const data = await res.json();
       if (res.ok) {
-        setStatus("✅ You're subscribed. We'll notify you of updates.");
-        setEmail("");
+        setStatus("success")
+        setMessage("✅ You're subscribed. We'll notify you of updates.")
+        setEmail("")
       } else {
-        setStatus(`⚠️ ${data.error || "Failed to subscribe."}`);
+        throw new Error("Failed to subscribe")
       }
     } catch (err) {
-      setStatus("⚠️ Something went wrong.");
+      setStatus("error")
+      setMessage("❌ Subscription failed. Please try again.")
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-sm">
-      <p className="text-sm text-gray-700">
-         Subscribe with your email to get notified when this website overhaul checklist changes. 
-  For internal use only.
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <p className="text-sm text-gray-600">
+        Subscribe with your email to get notified when this website overhaul checklist changes.
+        For internal use only.
       </p>
+
       <input
         type="email"
-        required
         placeholder="Enter your email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="border p-2 rounded w-full"
+        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
       />
       <button
         type="submit"
-        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded"
+        className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
       >
         Subscribe
       </button>
-      {status && <p className="text-sm text-gray-600">{status}</p>}
+
+      {status !== "idle" && (
+        <p
+          className={`text-sm mt-2 ${
+            status === "success" ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {message}
+        </p>
+      )}
     </form>
-  );
+  )
 }
