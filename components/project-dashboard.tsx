@@ -1,11 +1,10 @@
 "use client"
 import SubscribeForm from "../components/SubscribeForm"
-
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import type { TaskRow } from "@/lib/googleSheets"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 const statusColors = {
   Done: "bg-green-100 text-green-800",
@@ -14,39 +13,23 @@ const statusColors = {
   blocked: "bg-red-100 text-red-800",
 }
 
-const POLL_MS = 30_000
-
 export default function ProjectDashboard() {
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const isFetching = useRef(false)
 
-  async function loadData() {
-    if (isFetching.current) return
-    isFetching.current = true
-    try {
-      const res = await fetch(`/api/progress?t=${Date.now()}`, { cache: "no-store" })
-      const rows = await res.json()
-      setTasks(rows)
-      setLastUpdated(new Date())
-    } catch (error) {
-      console.error("Failed to load progress data:", error)
-    } finally {
-      isFetching.current = false
-      setLoading(false)
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await fetch("/api/progress")
+        const rows = await data.json()
+        setTasks(rows)
+      } catch (error) {
+        console.error("Failed to load progress data:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
-
-  // initial load
-  useEffect(() => {
     loadData()
-  }, [])
-
-  // poll every 30s
-  useEffect(() => {
-    const id = setInterval(loadData, POLL_MS)
-    return () => clearInterval(id)
   }, [])
 
   if (loading) {
@@ -54,38 +37,35 @@ export default function ProjectDashboard() {
   }
 
   const sections = [...new Set(tasks.map((t) => t.phase))]
+
   const overall = {
     total: tasks.length,
     done: tasks.filter((t) => t.status === "Done").length,
   }
+
   const data = [
     { name: "Done", value: overall.done },
-    { name: "Remaining", value: overall.total - overall.done },
+    { name: "Remaining", value: overall.total - overall.done }
   ]
 
   return (
-    <div className="p-6 grid gap-6 md:grid-cols-2">
+    <div className="p-4 grid gap-6 grid-cols-1 md:grid-cols-2">
       {/* Overall Progress */}
-      <Card className="col-span-2">
-        <CardContent className="flex items-center justify-between p-6">
-          <div>
-            <h2 className="text-xl font-semibold">Overall Progress</h2>
-            <p className="text-sm text-gray-600">
+      <Card className="col-span-1 md:col-span-2">
+        <CardContent className="flex flex-col md:flex-row items-center justify-between p-4 md:p-6">
+          <div className="text-center md:text-left mb-4 md:mb-0">
+            <h2 className="text-lg md:text-xl font-semibold">Overall Progress</h2>
+            <p className="text-xs md:text-sm text-gray-600">
               {overall.done} of {overall.total} tasks complete
             </p>
-            {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-1">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </p>
-            )}
           </div>
-          <div className="w-32 h-32">
-            <ResponsiveContainer>
+          <div className="w-24 h-24 md:w-32 md:h-32">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={data}
-                  innerRadius={40}
-                  outerRadius={60}
+                  innerRadius={30}
+                  outerRadius={50}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -98,9 +78,13 @@ export default function ProjectDashboard() {
         </CardContent>
       </Card>
 
-      {/* Team Notifications */}
-      <div className="rounded-xl border bg-white p-6 shadow">
-        <h2 className="text-lg font-bold mb-2">Team Notifications</h2>
+      {/* Notifications + Subscribe */}
+      <div className="rounded-xl border bg-white p-4 md:p-6 shadow space-y-4">
+        <h2 className="text-lg font-bold">Team Notifications</h2>
+        <p className="text-sm text-gray-600">
+          Subscribe with your email to get notified when this website overhaul checklist changes.  
+          For internal use only.
+        </p>
         <SubscribeForm />
       </div>
 
@@ -112,16 +96,16 @@ export default function ProjectDashboard() {
 
         return (
           <Card key={section}>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-2">{section}</h3>
+            <CardContent className="p-4 md:p-6">
+              <h3 className="text-md md:text-lg font-semibold mb-2">{section}</h3>
               <Progress value={percent} className="h-2 mb-4" />
               <ul className="space-y-3">
                 {sectionTasks.map((t, i) => (
                   <li key={i}>
-                    <div className="flex justify-between items-center">
-                      <span>{t.task}</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                      <span className="text-sm md:text-base">{t.task}</span>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`mt-1 sm:mt-0 px-2 py-1 rounded text-xs font-medium self-start sm:self-auto ${
                           statusColors[t.status] || "bg-gray-100 text-gray-800"
                         }`}
                       >
