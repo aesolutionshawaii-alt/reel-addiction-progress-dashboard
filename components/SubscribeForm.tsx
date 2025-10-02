@@ -34,10 +34,7 @@ export default function SubscribeForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <p className="text-sm text-gray-600">
-        Subscribe with your email to get notified when this website overhaul checklist changes.
-        For internal use only.
-      </p>
+      
 
       <input
         type="email"
