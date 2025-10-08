@@ -20,7 +20,7 @@ export async function GET() {
   try {
     // --- Env ---
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
-    const range = process.env.GOOGLE_SHEETS_RANGE!; // e.g., "Progress!A:D"
+    const range = process.env.GOOGLE_SHEETS_RANGE!; // e.g. "Progress!A:D"
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
     const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n");
     const resendKey = process.env.RESEND_API_KEY || "";
@@ -63,7 +63,7 @@ export async function GET() {
     // --- Load current + snapshot ---
     const currentRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range, // e.g., Progress!A:D
+      range, // e.g. Progress!A:D
     });
     const current = currentRes.data.values || [];
 
@@ -98,7 +98,7 @@ export async function GET() {
     // Build diff HTML
     const diffHtml = makeDiff(snapshot, current);
 
-    // Send email (only if there are subscribers)
+    // --- Send email ---
     if (subscribers.length && resendKey) {
       const sendRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -130,7 +130,7 @@ export async function GET() {
       }
     }
 
-    // Update snapshot
+    // --- Update snapshot ---
     await sheets.spreadsheets.values.clear({ spreadsheetId, range: snapshotRange });
     await sheets.spreadsheets.values.update({
       spreadsheetId,
