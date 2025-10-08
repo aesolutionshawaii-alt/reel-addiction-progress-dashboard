@@ -116,7 +116,7 @@ export async function GET() {
   <hr/>
   <div style="font-family:monospace">${diffHtml}</div>
   <p>
-    <a href="https://reel-addiction-progress-dashboard.vercel.app/progress" target="_blank"
+    <a href="https://v0-reel-addiction-iii-web-redesign.vercel.app/progress" target="_blank"
        style="color:#2563eb;text-decoration:none;font-weight:500">
        🔗 Open Progress Tab
     </a>
