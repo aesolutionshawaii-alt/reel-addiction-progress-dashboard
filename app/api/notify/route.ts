@@ -116,14 +116,13 @@ export async function GET() {
   <hr/>
   <div style="font-family:monospace">${diffHtml}</div>
   <p>
-    <a href="https://reel-addiction-dashboard.vercel.app" target="_blank" 
+    <a href="https://reel-addiction-progress-dashboard.vercel.app/progress" target="_blank"
        style="color:#2563eb;text-decoration:none;font-weight:500">
-       🔗 Open Progress Dashboard
+       🔗 Open Progress Tab
     </a>
   </p>
   <p>– Reel Addiction III Crew</p>
 `,
-
         }),
       });
       if (!sendRes.ok) {
@@ -149,4 +148,5 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+
 
