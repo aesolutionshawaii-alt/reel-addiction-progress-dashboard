@@ -110,11 +110,20 @@ export async function GET() {
           from: "Reel Addiction III <updates@yourdomain.com>",
           to: subscribers,
           subject: "Website Project Checklist Updated",
-          html: `<p>Aloha,</p>
-                 <p>The internal website overhaul checklist has changed (tab: <b>${currentTab}</b>).</p>
-                 <hr/>
-                 <div style="font-family:monospace">${diffHtml}</div>
-                 <p>– Reel Addiction III Crew</p>`,
+          html: `
+  <p>Aloha,</p>
+  <p>The internal website overhaul checklist has changed (tab: <b>${currentTab}</b>).</p>
+  <hr/>
+  <div style="font-family:monospace">${diffHtml}</div>
+  <p>
+    <a href="https://reel-addiction-dashboard.vercel.app" target="_blank" 
+       style="color:#2563eb;text-decoration:none;font-weight:500">
+       🔗 Open Progress Dashboard
+    </a>
+  </p>
+  <p>– Reel Addiction III Crew</p>
+`,
+
         }),
       });
       if (!sendRes.ok) {
