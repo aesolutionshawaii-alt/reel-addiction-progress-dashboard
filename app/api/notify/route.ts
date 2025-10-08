@@ -107,7 +107,7 @@ export async function GET() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Reel Addiction III <updates@yourdomain.com>",
+          from: "Reel Addiction III <onboarding@resend.dev>",
           to: subscribers,
           subject: "Website Project Checklist Updated",
           html: `
