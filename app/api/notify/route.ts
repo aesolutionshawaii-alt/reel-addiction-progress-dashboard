@@ -103,7 +103,7 @@ export async function POST() {
         },
         body: JSON.stringify({
           from: "Reel Addiction III <onboarding@resend.dev>",
-          to: subscribers.join(", "), // send to all
+          to: subscribers, // send to all
           subject: "Website Project Checklist Updated",
           html: `
             <p>Aloha,</p>
