@@ -36,11 +36,20 @@ export async function POST() {
     const snapshotTab = "LastSnapshot";
     const snapshotRange = `${snapshotTab}!${cols}`;
 
-   // --- Load and clean subscribers (every row in column A) ---
+  // --- Load and flatten all subscriber emails from column A ---
 const subsRes = await sheets.spreadsheets.values.get({
   spreadsheetId,
   range: "Subscribers!A2:A", // all rows below header
 });
+
+// flatten the 2D array → simple list
+const subscribers = (subsRes.data.values || [])
+  .flat() // collapse [[email1], [email2], ...] → [email1, email2, ...]
+  .map((email) => email.trim())
+  .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)); // validate
+
+console.log("Subscribers list:", subscribers);
+
 
 // flatten, trim, and validate
 const subscribers =
@@ -100,7 +109,7 @@ const subscribers =
         },
         body: JSON.stringify({
           from: "Reel Addiction III <onboarding@resend.dev>",
-          to: subscribers.join(", "), // send as comma-separated string so all get mail
+          to: subscribers.join(", "), // comma-separated so Resend sees all recipients
           subject: "Website Project Checklist Updated",
           html: `
             <p>Aloha,</p>
