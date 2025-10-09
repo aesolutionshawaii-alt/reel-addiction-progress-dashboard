@@ -36,11 +36,21 @@ export async function POST() {
     const snapshotTab = "LastSnapshot";
     const snapshotRange = `${snapshotTab}!${cols}`;
 
-    // Fetch subscriber emails from the "Subscribers" sheet (column A)
+   // --- Load and clean subscribers (every row in column A) ---
 const subsRes = await sheets.spreadsheets.values.get({
   spreadsheetId,
-  range: "Subscribers!A2:A", // skip header row
+  range: "Subscribers!A2:A", // all rows below header
 });
+
+// flatten, trim, and validate
+const subscribers =
+  subsRes.data.values
+    ?.flat()
+    .map((email) => email.trim())
+    .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || [];
+
+console.log("Final subscribers:", subscribers);
+
 
 // Make sure we only get valid, trimmed email addresses
 const subscribers =
@@ -90,7 +100,7 @@ const subscribers =
         },
         body: JSON.stringify({
           from: "Reel Addiction III <onboarding@resend.dev>",
-          to: subscribers,
+          to: subscribers.join(", "), // send as comma-separated string so all get mail
           subject: "Website Project Checklist Updated",
           html: `
             <p>Aloha,</p>
