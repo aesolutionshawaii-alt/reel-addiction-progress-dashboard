@@ -16,7 +16,7 @@ function makeDiff(oldData: string[][], newData: string[][]): string {
   return diffs.length ? diffs.join("\n") : "Updated, but no row-level differences detected.";
 }
 
-export async function GET() {
+export async function POST() {
   try {
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
     const range = process.env.GOOGLE_SHEETS_RANGE!;
