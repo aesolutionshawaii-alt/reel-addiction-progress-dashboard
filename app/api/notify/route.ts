@@ -9,11 +9,15 @@ function makeDiff(oldData: string[][], newData: string[][]): string {
     const newRow = newData[i] || [];
     if (JSON.stringify(oldRow) !== JSON.stringify(newRow)) {
       diffs.push(
-        `Row ${i + 1}:<br>Before → ${oldRow.join(" | ") || "(empty)"}<br>After → ${newRow.join(" | ") || "(empty)"}<br><br>`
+        `Row ${i + 1}:<br>Before → ${oldRow.join(" | ") || "(empty)"}<br>After → ${
+          newRow.join(" | ") || "(empty)"
+        }<br><br>`
       );
     }
   }
-  return diffs.length ? diffs.join("\n") : "Updated, but no row-level differences detected.";
+  return diffs.length
+    ? diffs.join("\n")
+    : "Updated, but no row-level differences detected.";
 }
 
 export async function POST() {
@@ -28,6 +32,7 @@ export async function POST() {
       credentials: { client_email: clientEmail, private_key: privateKey },
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
+
     const sheets = google.sheets({ version: "v4", auth });
 
     const parts = range.split("!");
@@ -36,40 +41,23 @@ export async function POST() {
     const snapshotTab = "LastSnapshot";
     const snapshotRange = `${snapshotTab}!${cols}`;
 
-  // --- Load and flatten all subscriber emails from column A ---
-const subsRes = await sheets.spreadsheets.values.get({
-  spreadsheetId,
-  range: "Subscribers!A2:A", // all rows below header
-});
-
-// --- Load and flatten all subscriber emails from column A ---
-const subsRes = await sheets.spreadsheets.values.get({
-  spreadsheetId,
-  range: "Subscribers!A2:A", // all rows below header
-});
-
-// flatten the 2D array → simple list
-const subscribers = (subsRes.data.values || [])
-  .flat()
-  .map((email) => email.trim())
-  .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)); // validate
-
-console.log("Subscribers list:", subscribers);
-
-    .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || [];
-
-console.log("Final subscribers:", subscribers);
-
-
-// Make sure we only get valid, trimmed email addresses
-const subscribers =
-  subsRes.data.values?.map((row) => row[0].trim()).filter(Boolean) || [];
-
-
-    const currentRes = await sheets.spreadsheets.values.get({
+    // --- Load all subscriber emails from column A (below header) ---
+    const subsRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range,
+      range: "Subscribers!A2:A",
     });
+
+    // --- Flatten, clean, and validate ---
+    const subscribers =
+      (subsRes.data.values || [])
+        .flat()
+        .map((email) => email.trim())
+        .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || [];
+
+    console.log("Subscribers list:", subscribers);
+
+    // --- Load current and snapshot data ---
+    const currentRes = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     const current = currentRes.data.values || [];
 
     let snapshot: string[][] = [];
@@ -83,6 +71,7 @@ const subscribers =
       snapshot = [];
     }
 
+    // --- First run: seed snapshot ---
     if (!snapshot.length) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -90,9 +79,13 @@ const subscribers =
         valueInputOption: "RAW",
         requestBody: { values: current },
       });
-      return NextResponse.json({ ok: true, message: "Seeded LastSnapshot (first run). No emails sent." });
+      return NextResponse.json({
+        ok: true,
+        message: "Seeded LastSnapshot (first run). No emails sent.",
+      });
     }
 
+    // --- Check for changes ---
     const changed = JSON.stringify(current) !== JSON.stringify(snapshot);
     if (!changed) {
       return NextResponse.json({ ok: true, message: "No changes." });
@@ -100,6 +93,7 @@ const subscribers =
 
     const diffHtml = makeDiff(snapshot, current);
 
+    // --- Send emails to all subscribers ---
     if (subscribers.length && resendKey) {
       const sendRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -109,7 +103,7 @@ const subscribers =
         },
         body: JSON.stringify({
           from: "Reel Addiction III <onboarding@resend.dev>",
-          to: subscribers.join(", "), // comma-separated so Resend sees all recipients
+          to: subscribers.join(", "), // send to all
           subject: "Website Project Checklist Updated",
           html: `
             <p>Aloha,</p>
@@ -118,20 +112,25 @@ const subscribers =
             <div style="font-family:monospace">${diffHtml}</div>
             <p>
               <a href="https://v0-reel-addiction-iii-web-redesign.vercel.app/progress" target="_blank"
-                 style="color:#2563eb;text-decoration:none;font-weight:500">
-                 🔗 Open Progress Tab
+                style="color:#2563eb;text-decoration:none;font-weight:500">
+                🔗 Open Progress Tab
               </a>
             </p>
             <p>– Reel Addiction III Crew</p>
           `,
         }),
       });
+
       if (!sendRes.ok) {
         console.error("Resend error:", await sendRes.text());
       }
     }
 
-    await sheets.spreadsheets.values.clear({ spreadsheetId, range: snapshotRange });
+    // --- Update snapshot ---
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: snapshotRange,
+    });
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `${snapshotTab}!A1`,
@@ -145,7 +144,10 @@ const subscribers =
     });
   } catch (err: any) {
     console.error("Notify error:", err);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: err.message },
+      { status: 500 }
+    );
   }
 }
 
