@@ -36,11 +36,16 @@ export async function POST() {
     const snapshotTab = "LastSnapshot";
     const snapshotRange = `${snapshotTab}!${cols}`;
 
-    const subsRes = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: "Subscribers!A:A",
-    });
-    const subscribers = (subsRes.data.values || []).flat().filter(Boolean) as string[];
+    // Fetch subscriber emails from the "Subscribers" sheet (column A)
+const subsRes = await sheets.spreadsheets.values.get({
+  spreadsheetId,
+  range: "Subscribers!A2:A", // skip header row
+});
+
+// Make sure we only get valid, trimmed email addresses
+const subscribers =
+  subsRes.data.values?.map((row) => row[0].trim()).filter(Boolean) || [];
+
 
     const currentRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
