@@ -42,20 +42,20 @@ const subsRes = await sheets.spreadsheets.values.get({
   range: "Subscribers!A2:A", // all rows below header
 });
 
+// --- Load and flatten all subscriber emails from column A ---
+const subsRes = await sheets.spreadsheets.values.get({
+  spreadsheetId,
+  range: "Subscribers!A2:A", // all rows below header
+});
+
 // flatten the 2D array → simple list
 const subscribers = (subsRes.data.values || [])
-  .flat() // collapse [[email1], [email2], ...] → [email1, email2, ...]
+  .flat()
   .map((email) => email.trim())
   .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)); // validate
 
 console.log("Subscribers list:", subscribers);
 
-
-// flatten, trim, and validate
-const subscribers =
-  subsRes.data.values
-    ?.flat()
-    .map((email) => email.trim())
     .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) || [];
 
 console.log("Final subscribers:", subscribers);
